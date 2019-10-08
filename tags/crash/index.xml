@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>crash on caikelun.io</title>
+    <link>https://caikelun.io/tags/crash/</link>
+    <description>Recent content in crash on caikelun.io</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <managingEditor>caikelun@gmail.com (CAI Kelun (蔡克伦))</managingEditor>
+    <webMaster>caikelun@gmail.com (CAI Kelun (蔡克伦))</webMaster>
+    <lastBuildDate>Thu, 01 Aug 2019 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="https://caikelun.io/tags/crash/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Android APP native 崩溃分析之时间的秘密</title>
+      <link>https://caikelun.io/post/2019-08-01-android-app-native-crash-secret-of-time/</link>
+      <pubDate>Thu, 01 Aug 2019 00:00:00 +0000</pubDate>
+      <author>caikelun@gmail.com (CAI Kelun (蔡克伦))</author>
+      <guid>https://caikelun.io/post/2019-08-01-android-app-native-crash-secret-of-time/</guid>
+      <description>&lt;p&gt;对于程序的崩溃问题，无论是面对 Linux 的 coredump 还是 Android 的 tombstone，我们最终都需要进行俗称为 “验尸” 的过程。有时候，我们会遇到一些堪称完美的 “犯罪现场”。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Android APP native 崩溃分析之令人困惑的 backtrace</title>
+      <link>https://caikelun.io/post/2019-06-01-android-app-native-crash-confusing-backtrace/</link>
+      <pubDate>Sat, 01 Jun 2019 00:00:00 +0000</pubDate>
+      <author>caikelun@gmail.com (CAI Kelun (蔡克伦))</author>
+      <guid>https://caikelun.io/post/2019-06-01-android-app-native-crash-confusing-backtrace/</guid>
+      <description>&lt;p&gt;完美无缺的代码逻辑，一定能产生完美无缺的程序吗？答案是否定的。从软件的层面来看，也许只有二进制才永远不会欺骗你。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Android APP native 崩溃分析之 linker SIGBUS 崩溃</title>
+      <link>https://caikelun.io/post/2019-05-31-android-app-native-crash-linker-sigbus/</link>
+      <pubDate>Fri, 31 May 2019 00:00:00 +0000</pubDate>
+      <author>caikelun@gmail.com (CAI Kelun (蔡克伦))</author>
+      <guid>https://caikelun.io/post/2019-05-31-android-app-native-crash-linker-sigbus/</guid>
+      <description>&lt;p&gt;这是 Android APP native 崩溃分析系列文章的第一篇。最近分析了一例线上的 Android linker SIGBUS 崩溃，在这里记录一下。&lt;/p&gt;</description>
+    </item>
+    
+  </channel>
+</rss>

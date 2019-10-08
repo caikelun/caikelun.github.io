@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+	<meta charset="utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+
+
+<title>IDA Pro 静态分析与动态分析 - caikelun.io</title>
+<meta property="og:title" content="IDA Pro 静态分析与动态分析 - caikelun.io" />
+
+
+<meta property="og:site_name" content="caikelun.io" />
+<meta property="og:type" content="website" />
+<meta name="author" content="CAI Kelun (蔡克伦)"/>
+
+<meta property="og:url" content="https://caikelun.io/post/2018-06-26-ida-pro-static-analysis-and-dynamic-analysis/" />
+<link rel="canonical" href="https://caikelun.io/post/2018-06-26-ida-pro-static-analysis-and-dynamic-analysis/" />
+<meta name="description" content="IDA Pro 是一款交互式的反汇编器和调试器，用于对可执行二进制文件做静态分析和动态分析。本文描述了静态分析和动态分析的基本用法（以 Android native so 库为例）；还总结了一些常见的“反静态分析”和“反动态分析”的方法，以及基本的应对思路。（这篇文章的内容来自于近期在公司内部做的一个技术分享，以介绍概况为主，内容并不是很深入。）">
+<meta property="og:description" content="IDA Pro 是一款交互式的反汇编器和调试器，用于对可执行二进制文件做静态分析和动态分析。本文描述了静态分析和动态分析的基本用法（以 Android native so 库为例）；还总结了一些常见的“反静态分析”和“反动态分析”的方法，以及基本的应对思路。（这篇文章的内容来自于近期在公司内部做的一个技术分享，以介绍概况为主，内容并不是很深入。）">
+
+<script>
+function navbarTogglerOnClick() {
+  var x = document.getElementById("navbarNavAltMarkup");
+  if (x.style.display == "block") {
+    x.style.display = "none";
+  } else {
+    x.style.display = "block";
+  }
+}
+</script>
+
+<link rel="stylesheet" href="/css/main.css?1570538738">
+<link rel="stylesheet" href="/css/syntax.css?1570538738">
+
+<link rel="alternate" href="https://caikelun.io/index.xml" type="application/rss+xml" title="caikelun.io">
+
+  </head>
+  <body>
+	<div class="container">
+      <nav class="navbar">
+  <a class="navbar-brand" href="/">caikelun.io</a>
+  <button class="navbar-toggler" type="button" onclick="navbarTogglerOnClick()">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class="navbar-collapse" id="navbarNavAltMarkup">
+    <div class="navbar-nav">
+      <a class="navbar-link" href="/">Home</a>
+      <a class="navbar-link" href="/post/">Posts</a>
+      <a class="navbar-link" href="/categories/">Categories</a>
+      <a class="navbar-link" href="/tags/">Tags</a>
+      <a class="navbar-link" href="/index.xml">RSS</a>
+	  <a class="navbar-link" href="/about/">About</a>
+    </div>
+  </div>
+</nav>
+
+	<div class="container-main">
+      
+
+<article class="article">
+  <header class="title">IDA Pro 静态分析与动态分析</header>
+  <div class="meta">
+  2018-06-26&nbsp;
+  
+  
+  /&nbsp;
+  
+  
+  
+  <a href="/categories/reverse/">@reverse</a>&nbsp;
+  
+  
+  
+  /&nbsp;
+  
+  
+  
+  <a href="/tags/reverse/">#reverse</a>&nbsp;
+  
+  <a href="/tags/ida/">#ida</a>&nbsp;
+  
+  <a href="/tags/android/">#android</a>&nbsp;
+  
+</div>
+
+  <div class="info">
+  Written by: CAI Kelun (蔡克伦)<br />
+  Connect with me: <a href="mailto:caikelun@gmail.com">caikelun@gmail.com</a><br />
+  Original from: <a href="https://caikelun.io/post/2018-06-26-ida-pro-static-analysis-and-dynamic-analysis/">https://caikelun.io/</a><br />
+  Licensed under: <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0 License</a>
+</div>
+
+  <div>
+	<nav id="TableOfContents">
+<ul>
+<li><a href="#概述">概述</a>
+<ul>
+<li><a href="#为何反汇编">为何反汇编</a></li>
+<li><a href="#如何反汇编">如何反汇编</a></li>
+<li><a href="#ida-pro-介绍">IDA Pro 介绍</a></li>
+</ul></li>
+<li><a href="#ida-pro-静态分析">IDA Pro 静态分析</a></li>
+<li><a href="#反静态分析">反静态分析</a>
+<ul>
+<li><a href="#指令膨胀">指令膨胀</a></li>
+<li><a href="#反汇编去同步">反汇编去同步</a></li>
+<li><a href="#动态计算目标地址">动态计算目标地址</a></li>
+<li><a href="#模糊操作码">模糊操作码</a></li>
+<li><a href="#虚拟机加固">虚拟机加固</a></li>
+<li><a href="#导入表模糊">导入表模糊</a></li>
+<li><a href="#有针对性的攻击分析工具">有针对性的攻击分析工具</a></li>
+</ul></li>
+<li><a href="#ida-pro-动态分析">IDA Pro 动态分析</a>
+<ul>
+<li><a href="#确认关闭-selinux">确认关闭 SELinux</a></li>
+<li><a href="#安装并启动-android-server">安装并启动 android_server</a></li>
+<li><a href="#adb-forward-端口映射">adb forward 端口映射</a></li>
+<li><a href="#启动被调试的-app">启动被调试的 APP</a></li>
+<li><a href="#启动-ida-pro">启动 IDA Pro</a></li>
+<li><a href="#定位断点的位置">定位断点的位置</a></li>
+</ul></li>
+<li><a href="#反动态分析">反动态分析</a>
+<ul>
+<li><a href="#检测虚拟化">检测虚拟化</a></li>
+<li><a href="#检测特定工具">检测特定工具</a></li>
+<li><a href="#检测运行环境">检测运行环境</a></li>
+<li><a href="#检测调试器">检测调试器</a></li>
+<li><a href="#检测代码执行的时间间隔">检测代码执行的时间间隔</a></li>
+</ul></li>
+</ul>
+</nav>
+  </div>
+  <div class="content">
+    <p>IDA Pro 是一款交互式的反汇编器和调试器，用于对可执行二进制文件做静态分析和动态分析。本文描述了静态分析和动态分析的基本用法（以 Android native so 库为例）；还总结了一些常见的“反静态分析”和“反动态分析”的方法，以及基本的应对思路。（这篇文章的内容来自于近期在公司内部做的一个技术分享，以介绍概况为主，内容并不是很深入。）</p>
+
+<h1 id="概述">概述</h1>
+
+<h2 id="为何反汇编">为何反汇编</h2>
+
+<p>常见的原因有：</p>
+
+<ul>
+<li>分析恶意软件。</li>
+<li>分析闭源软件的漏洞。</li>
+<li>分析闭源软件的实现方式和交互操作。</li>
+<li>分析编译器生成的代码，以验证编译器的优化选项和正确性。</li>
+<li>配合调试器显示程序指令。</li>
+</ul>
+
+<h2 id="如何反汇编">如何反汇编</h2>
+
+<p>大致的流程：</p>
+
+<ul>
+<li>确定需要进行反汇编的代码区域。（并不像看起来这么简单，指令和数据通常混杂在一起）</li>
+<li>逐条读取指令，查表，输出汇编语言描述符。（需处理：指令长度可变、指令前缀影响指令行为、指令操作数确定等问题）</li>
+<li>确定各个函数的起始和结束位置。</li>
+</ul>
+
+<p>反汇编常用的方法有两种：</p>
+
+<ul>
+<li>线性扫描法。</li>
+<li>递归下降法。</li>
+</ul>
+
+<p>相对来说，线性扫描法实现起来比较容易，objdump 就是使用此种方法。线性扫描法的主要缺点，是无法有效的将指令和数据分离，有时会错误的把数据部分反编译成指令。递归下降法强调控制流的概念，控制流根据一条指令是否被另一条指令引用来决定是否对其进行反汇编，很大程度上克服了线性扫描法带来的缺点，IDA Pro 使用递归下降法进行反汇编。</p>
+
+<p>因此，同一个二进制文件用 objdump 和 IDA Pro 反汇编后的输出有少许区别并不奇怪。</p>
+
+<h2 id="ida-pro-介绍">IDA Pro 介绍</h2>
+
+<p>IDA 是 <a href="https://www.hex-rays.com/">Hex-Rays</a> 公司出品的一款交互式的反汇编器和调试器，由传奇程序员 <a href="http://www.hexblog.com/">Ilfak Guilfanov</a> 开发。IDA 分为 Pro 和 Starter 两个版本，Pro 版本的功能更完整和强大。</p>
+
+<p>IDA 本身是闭源的收费程序，且价格比较昂贵。IDA 使用了分 CPU arch 的授权模式，比如你仅需要反汇编 x86 代码，只需购买 Base License + x86 Decompiler License，如果你碰巧还需要反汇编 arm64 代码，那就需要购买 Base License + x86 Decompiler License + ARM64 Decompiler License。具体价格可以到 <a href="https://www.hex-rays.com/cgi-bin/quote.cgi">Hex-Rays 的官网</a> 查看。</p>
+
+<p>相对于 <a href="https://www.gnu.org/software/binutils/">objdump</a> 等免费的反汇编工具，IDA Pro 具有更加强大的功能。IDA Pro 可以分析各种平台的各种格式的可执行二进制文件，比如：ELF、windows PE、Android dex、Java .class、Python .pyc 等等。IDA 的核心处理器模块甚至可以通过 SDK 扩展，用于支持自定义格式的二进制文件分析。</p>
+
+<p>IDA Pro 的基本功能：</p>
+
+<ul>
+<li>对可执行文件进行静态分析。</li>
+<li>修改可执行文件，生成 patch。</li>
+<li>调试可执行文件。（动态分析）</li>
+</ul>
+
+<p>IDA Pro 提供强大的扩展和插件功能，扩展和插件可以干预 IDA Pro 执行静态分析和动态分析的过程。扩展和插件机制不仅给 IDA 带来了更加丰富多样的功能，有时候，编写自定义扩展脚本也是一种对抗“反静态分析”和“反动态分析”的有效手段。目前 IDA Pro 支持使用以下三种方式编写扩展和插件：</p>
+
+<ul>
+<li>IDA SDK（以 C++ 库和头文件的形式提供）</li>
+<li>专用的 IDC 脚本语言（底层调用 IDA SDK）</li>
+<li>IDAPython（本身是一个 IDA 的插件，提供 Python 接口，底层调用 IDA SDK）</li>
+</ul>
+
+<p>IDA 的插件有开源的，有免费的，也有付费的，个别强大的插件的价格甚至比 IDA 主程序的价格更贵。</p>
+
+<h1 id="ida-pro-静态分析">IDA Pro 静态分析</h1>
+
+<p>静态分析比较简单，以 Android native so 为例，用 IDA Pro 打开 so 文件后的界面：</p>
+
+<p><img src="/img/post/2018-06-26-ida-static-1.png" alt="" /></p>
+
+<p>主界面左边是函数列表，右边的窗口区域目前展示的是反汇编输出。IDA Pro 的反汇编输出包含了大量注释和命名变量，已经是十分友好的汇编输出了。通过双击函数名、右键或主菜单选 Jump to xref，可以跳转到函数的定义处，或函数的调用处。</p>
+
+<p>使用 IDA Pro 的杀手插件 Hex-Rays（这个插件的名字居然和 IDA Pro 的出品公司的名字一样。俗称 “F5” 插件），按 <code>F5</code> 快捷键，可以将汇编函数反编译成 C 函数！虽然和源码的可读性还是有差距，但是已经很不错了：</p>
+
+<p><img src="/img/post/2018-06-26-ida-static-2.png" alt="" /></p>
+
+<p>主菜单的各个选项都值得花时间研究和尝试一下。比如，绘制函数内部的流程图：</p>
+
+<p><img src="/img/post/2018-06-26-ida-static-3.png" alt="" /></p>
+
+<p>绘制整个 so 库中各个函数的调用关系图：</p>
+
+<p><img src="/img/post/2018-06-26-ida-static-4.png" alt="" /></p>
+
+<p>另外，在 IDA Pro 中也可以很方便的查看 so 的导入表、导出表、Strings、Segments 等基本信息。</p>
+
+<h1 id="反静态分析">反静态分析</h1>
+
+<p>如你所见，类似 IDA Pro 这样的工具降低了人们进入二进制分析领域的门槛，二进制逆向工程领域已经取得了长足的进步，而希望保护软件不被分析的程序员也同样不甘示弱。于是，逆向工程人员与希望保护软件不被分析的程序员之间展开了某种“军备竞赛”。</p>
+
+<p>有不少开源的或付费的工具可以实现 <strong>模糊</strong> 或 <strong>加壳</strong> 的功能：</p>
+
+<ul>
+<li><a href="https://github.com/obfuscator-llvm/obfuscator">Obfuscator-LLVM</a></li>
+<li><a href="https://github.com/upx/upx">UPX</a></li>
+<li><a href="http://stunnix.com/prod/cxxo/">stunnix cxx-obfus</a></li>
+<li><a href="http://vmpsoft.com/">VMProtect</a></li>
+</ul>
+
+<h2 id="指令膨胀">指令膨胀</h2>
+
+<p>例如将简单的几条指令膨胀到几万条，增加控制流的复杂度，增加无用的控制流，但是完成的是相同的功能，这会给反汇编输出的阅读者带来很大的困扰。指令膨胀会显著增大输出的二进制可执行文件的体积，所以一般仅用于加固敏感部分的代码。对于指令膨胀，我们需要分析被膨胀部分的函数的输入和输出，猜测这部分指令的用途，再使用动态调试来辅助分析。</p>
+
+<p>可以在源码级别通过宏扩展来完成，也可以使用类似 <a href="https://github.com/obfuscator-llvm/obfuscator">Obfuscator-LLVM</a> 的编译器插件来完成。</p>
+
+<h2 id="反汇编去同步">反汇编去同步</h2>
+
+<p>创造性的使用指令和数据，以干扰反汇编器找到指令的起始地址。有些情况下，IDA 也会给出错误的汇编输出，比如将数据反编译成了指令，或将指令反编译成了数据。你需要使用 Edit 菜单中的 Undefine 和 Code 命名修改特定地址区域的反汇编输出。</p>
+
+<h2 id="动态计算目标地址">动态计算目标地址</h2>
+
+<p>隐藏真实的控制流路径。利用多线程、进程间通讯、信号量来控制程序的执行。你需要仔细的分析这些控制逻辑，必要时使用动态分析来辅助。</p>
+
+<h2 id="模糊操作码">模糊操作码</h2>
+
+<p>类似 <a href="https://github.com/upx/upx">UPX</a> 的方式。直接反编译只能看到 UPX 本身的一段用于“去模糊”的逻辑，真正的指令需要在运行时经过去模糊操作才能得到。你可以先分析去模糊算法，然后开发自己的 IDA 扩展，来实现去模糊操作；或者使用动态调试。</p>
+
+<h2 id="虚拟机加固">虚拟机加固</h2>
+
+<p>类似 <a href="http://vmpsoft.com/">VMProtect</a> 的方式。无论静态分析还是动态分析，你只能看到虚拟机本身的指令，和未知格式的指令。你只能试着分析和理解虚拟机的指令格式。想象一下，如果你对 Java 一无所知，有人给你了一个 Java 虚拟机的二进制文件，和一个 Java .class 文件。</p>
+
+<h2 id="导入表模糊">导入表模糊</h2>
+
+<p>使用了类似 dlopen + dlsym 的方法。看不到导入表就很难猜测软件的具体功能，你需要还原它们，可以手工还原，也可以编写 IDA 扩展来完成。</p>
+
+<h2 id="有针对性的攻击分析工具">有针对性的攻击分析工具</h2>
+
+<p>是的，IDA Pro 等等的反汇编器也是有 bug 的。利用精心构造的二进制输入文件，可以使反汇编崩溃，停止工作，或者至少输出不正确的反汇编结果。这些问题可能使你很迷惑，你需要更换或者升级你的反汇编器。</p>
+
+<h1 id="ida-pro-动态分析">IDA Pro 动态分析</h1>
+
+<p>还是以 Android native so 为例，调试一个 so 的大致步骤：</p>
+
+<h2 id="确认关闭-selinux">确认关闭 SELinux</h2>
+
+<pre><code>root@android:/ # getenforce
+Enforcing
+
+root@android:/ # setenforce 0
+
+root@android:/ # getenforce
+Permissive
+</code></pre>
+
+<p>执行 <code>getenforce</code> 查看当前 SELinux 的设置，<code>Enforcing</code> 表示开启，<code>Permissive</code> 表示关闭。</p>
+
+<p>执行 <code>setenforce 0</code> 可关闭 SELinux，执行可 <code>setenforce 1</code> 开启 SELinux。<code>setenforce</code> 命令需要 root 权限。</p>
+
+<h2 id="安装并启动-android-server">安装并启动 android_server</h2>
+
+<p>android_server 是 IDA Pro 提供的 Android 远程调试的服务端程序，需要 push 到被调试的 Android 设备上。android_server 在 IDA Pro 的安装目录中可以找到。</p>
+
+<pre><code>caikelun@debian:~$ adb push ./android_server /data/local/tmp
+caikelun@debian:~$ adb shell &quot;chmod +x /data/local/tmp/android_server&quot;
+
+caikelun@debian:~$ adb root
+adbd is already running as root
+
+caikelun@debian:~$ adb shell &quot;/data/local/tmp/android_server&quot;
+IDA Android 32-bit remote debug server(ST) v1.22. Hex-Rays (c) 2004-2017
+Listening on 0.0.0.0:23946...
+</code></pre>
+
+<p>如上输出表示 android_server 已经顺利运行，保持运行状态，不要退出 android_server。</p>
+
+<p>注意：我们需要以 root 身份来运行 android_server，否则 android_server 没有权限对其他进程进行调试（比如调用 <code>ptrace</code>）。</p>
+
+<h2 id="adb-forward-端口映射">adb forward 端口映射</h2>
+
+<p>android_server 运行在 Android 设备上，默认监听 TCP 端口 <code>23946</code>，需要做一下端口映射。</p>
+
+<pre><code>caikelun@debian:~$ adb forward tcp:23946 tcp:23946
+</code></pre>
+
+<p>此时 IDA 应该可以通过本机的 <code>23946</code> 端口连接 Android 设备上运行的 android_server 了。</p>
+
+<h2 id="启动被调试的-app">启动被调试的 APP</h2>
+
+<pre><code>caikelun@debian:~$ caikelun$ adb shell am start -D -n com.qiyi.xhookwrapper/com.qiyi.xhookwrapper.MainActivity
+Starting: Intent { cmp=com.qiyi.xhookwrapper/.MainActivity }
+</code></pre>
+
+<p>由于我们加了 <code>-D</code> 参数，此时 Android 设备上会给出提示：“Waiting For Debugger”，表示正在等待调试器的链接。</p>
+
+<p>注意：也可以让 APP 正常启动，然后 IDA 依然可以 attach 到已经运行的进程上，但是这样无法调试到 APP 启动阶段的逻辑。</p>
+
+<h2 id="启动-ida-pro">启动 IDA Pro</h2>
+
+<p>启动 IDA Pro。在主菜单选择：Debugger -&gt; Attach -&gt; Remote ArmLinux/Android debugger。在 setup 对话框中，hostname 输入 <code>127.0.0.1</code>，Port 输入 <code>23946</code>，点击 OK 按钮。此时会出现一个列表，罗列了 Android 设备上当前运行的所有进程：</p>
+
+<p><img src="/img/post/2018-06-26-ida-dynamic-1.png" alt="" /></p>
+
+<p>找到我们需要调试的进程 <code>com.qiyi.xhookwrapper</code>，点击 OK 按钮。接下来进入了调试器界面：</p>
+
+<p><img src="/img/post/2018-06-26-ida-dynamic-2.png" alt="" /></p>
+
+<p>这里看到的调试器界面和大多数 IDE 和 GUI debugger 的界面类似，可以设置断点，可以单步调试，可以查看内存和寄存器信息。IDA Pro 调试器主要用于没有源码和调试信息的情况，比如破解和分析闭源的 so 库，因此我们当前调试的是汇编代码。（调试时是无法使用 “F5” 插件的）</p>
+
+<h2 id="定位断点的位置">定位断点的位置</h2>
+
+<p>我们需要启动另一个 IDA Pro 实例，打开需要被调试的文件（当前是我们的 libtest.so ），做静态分析，确定需要调试的汇编位置，记录地址：</p>
+
+<pre><code>.text:0000076C                 PUSH            {R4,R6,R7,LR}
+.text:0000076E                 ADD             R7, SP, #8
+.text:00000770                 SUB             SP, SP, #0x48
+.text:00000772                 MOV             R1, R0
+.text:00000774                 STR             R0, [SP,#0x50+var_10]
+.text:00000776                 LDR             R0, =(__android_log_print_ptr - 0x77C)
+.text:00000778                 ADD             R0, PC  ; __android_log_print_ptr
+.text:0000077A                 LDR             R0, [R0] ; __imp___android_log_print
+.text:0000077C                 STR             R0, [SP,#0x50+var_14]
+.text:0000077E                 MOVS            R0, #0
+.text:00000780                 STR             R0, [SP,#0x50+var_18]
+.text:00000782                 STR             R1, [SP,#0x50+var_20]
+.text:00000784                 B               loc_786
+</code></pre>
+
+<p>假设我们需要在 <code>76C</code> 这个位置设置断点，然后单步调试，观察内存和寄存器的变化。我们需要先记录 <code>76C</code> 这个地址值，这是个相对地址，我们需要找到 libtest.so 运行时的基地址。</p>
+
+<p>回到正在执行调试的 IDA 窗口，在主菜单选择 Jump -&gt; Jump to segments，会列出被调试进程的 maps 信息，找到我们需要调试的 libtest.so：</p>
+
+<pre><code>libtest.so	B33EC000	B33EE000	R	.	X	D	.	byte	00	public	CODE	32	00	00
+libtest.so	B33EF000	B33F0000	R	.	.	D	.	byte	00	public	CONST	32	00	00
+libtest.so	B33F0000	B33F1000	R	W	.	D	.	byte	00	public	DATA	32	00	00
+</code></pre>
+
+<p>这里的 <code>B33EC000</code> 就是 libtest.so 当前的基地址，把 <code>B33EC000</code> 和 <code>76C</code> 相加，得到 <code>B33EC76C</code>，这就是我们需要的内存绝对地址。在主菜单选择 Jump -&gt; Jump to address，输入 <code>B33EC76C</code>，点击 OK。我们在调试器的 debug view 界面中会看到：</p>
+
+<pre><code>libtest.so:B33EC76C DCB 0xD0
+libtest.so:B33EC76D DCB 0xB5
+libtest.so:B33EC76E DCB    2
+libtest.so:B33EC76F DCB 0xAF
+libtest.so:B33EC770 DCB 0x92
+libtest.so:B33EC771 DCB 0xB0
+libtest.so:B33EC772 DCB    1
+libtest.so:B33EC773 DCB 0x46 ; F
+libtest.so:B33EC774 DCB 0x10
+libtest.so:B33EC775 DCB 0x90
+libtest.so:B33EC776 DCB 0x2A ; *
+libtest.so:B33EC777 DCB 0x48 ; H
+libtest.so:B33EC778 DCB 0x78 ; x
+libtest.so:B33EC779 DCB 0x44 ; D
+libtest.so:B33EC77A DCB    0
+libtest.so:B33EC77B DCB 0x68 ; h
+libtest.so:B33EC77C DCB  0xF
+</code></pre>
+
+<p>这里看到的不是汇编代码，只是 16 进制数字。还记得我们在“反汇编去同步”中讲过的 Undefine 和 Code 吗？在地址 <code>B33EC000</code> 位置点击右键，选 Code。debug view 中的显示变成了：</p>
+
+<pre><code>libtest.so:B33EC76C PUSH            {R4,R6,R7,LR}
+libtest.so:B33EC76E ADD             R7, SP, #8
+libtest.so:B33EC770 SUB             SP, SP, #0x48
+libtest.so:B33EC772 MOV             R1, R0
+libtest.so:B33EC774 STR             R0, [SP,#0x40]
+libtest.so:B33EC776 LDR             R0, =(dword_B33EFFA4 - 0xB33EC77C)
+libtest.so:B33EC778 ADD             R0, PC                  ; dword_B33EFFA4
+libtest.so:B33EC77A LDR             R0, [R0]
+libtest.so:B33EC77C STR             R0, [SP,#0x3C]
+libtest.so:B33EC77E MOVS            R0, #0
+libtest.so:B33EC780 STR             R0, [SP,#0x38]
+libtest.so:B33EC782 STR             R1, [SP,#0x30]
+libtest.so:B33EC784 B               loc_B33EC786
+</code></pre>
+
+<p>把这些 16 进制数字显示为指令后，我们得到了和静态分析界面中一致的汇编输出。开始设置断点和单步调试吧！</p>
+
+<p><img src="/img/post/2018-06-26-ida-dynamic-3.png" alt="" /></p>
+
+<h1 id="反动态分析">反动态分析</h1>
+
+<p>首先需要说明的是，一个可执行二进制文件，比如一个 Android native so 库，它本身能做的事情是有限的，它只能访问 system call，调用系统库函数，访问寄存器、虚拟内存、IO 设备等等，仅此而已。因此，我们如果在它的第一条执行指令处下断点，它是无法阻止我们的。但是它还是能够使用很多技巧来干扰调试器的运行，增加我们的工作量。</p>
+
+<p>注意：Android native so 中最早被执行的代码位于 ELF 的 <code>.init_array</code> section 中，比 <code>JNI_OnLoad</code> 函数中的代码执行更早。</p>
+
+<p>对于下面描述的各种反动态分析的技巧，我们首先需要通过静态分析，来确认被分析二进制文件的检测点，之后，我们也许可以修改运行环境；也许可以编写特定的 IDA 扩展，在运行时欺骗被调试二进制的逻辑；也许可以直接修改二进制文件，删除或修改它的检测点或检测条件。</p>
+
+<h2 id="检测虚拟化">检测虚拟化</h2>
+
+<p>分析恶意软件时，我们往往在沙盒或虚拟化环境中调试它。虚拟化环境往往会留下一些痕迹，比如使用了某个特定的虚拟硬件标识符；启用了某些虚拟机特定的机制，比如共享剪贴板；运行了某些辅助工具，比如 VMware Tools。</p>
+
+<h2 id="检测特定工具">检测特定工具</h2>
+
+<p>比如检测当前环境是否安装了 Wireshark 网络抓包工具，恶意软件作者可能会认为正常用户不应该安装 Wireshark。</p>
+
+<h2 id="检测运行环境">检测运行环境</h2>
+
+<p>比如发现 Android 环境下存在一个名叫 android_server 的进程在运行，或者 <code>23946</code> TCP 端口处于监听状态，则终止进程。</p>
+
+<h2 id="检测调试器">检测调试器</h2>
+
+<p>Linux / Android 进程在同一时刻只能被 <strong>一个</strong> 进程调试，因此 so 库可以 <code>fork</code> 一个子进程，然后尝试 <code>ptrace()</code> attach 它的父进程，如果失败，则 so 库可能正在被调试器调试，此时立刻终止进程。</p>
+
+<p>so 启动后也可以直接调用 <code>ptrace(PTRACE_TRACEME, ...)</code>，这样后续调试器再调用 <code>ptrace</code> 来 attach 的时候都会失败。</p>
+
+<p>Linux / Android 系统中，如果一个进程正在被调试，则 <code>/proc/self/status</code> 信息中的 <code>TracerPid</code> 项会显示调试器进程的 PID，如果没有被调试，则 <code>TracerPid</code> 为 <code>0</code>。so 库可以编写逻辑来定期检测这个值。</p>
+
+<h2 id="检测代码执行的时间间隔">检测代码执行的时间间隔</h2>
+
+<p>进入调试器后，由于人为的断点和单步操作，代码段执行的间隔一般都会显著的拉长，so 库可以加入时间检测逻辑，如果发现大于某个阈值，则终止进程。</p>
+  </div>
+</article>
+
+
+	</div>
+      <footer class="site-footer">
+  
+  <div class="copyright">
+	© 2018-present
+	
+	CAI Kelun (蔡克伦)
+	<br />
+	Powered by <a href="https://gohugo.io/">Hugo</a> &
+	Hosted on <a href="https://gitlab.com/">GitLab Pages</a>
+  </div>
+</footer>
+
+	</div>
+  </body>
+</html>

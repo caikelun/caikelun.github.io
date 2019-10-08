@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+	<meta charset="utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+
+
+<title>Android APP native 崩溃分析之时间的秘密 - caikelun.io</title>
+<meta property="og:title" content="Android APP native 崩溃分析之时间的秘密 - caikelun.io" />
+
+
+<meta property="og:site_name" content="caikelun.io" />
+<meta property="og:type" content="website" />
+<meta name="author" content="CAI Kelun (蔡克伦)"/>
+
+<meta property="og:url" content="https://caikelun.io/post/2019-08-01-android-app-native-crash-secret-of-time/" />
+<link rel="canonical" href="https://caikelun.io/post/2019-08-01-android-app-native-crash-secret-of-time/" />
+<meta name="description" content="对于程序的崩溃问题，无论是面对 Linux 的 coredump 还是 Android 的 tombstone，我们最终都需要进行俗称为 “验尸” 的过程。有时候，我们会遇到一些堪称完美的 “犯罪现场”。">
+<meta property="og:description" content="对于程序的崩溃问题，无论是面对 Linux 的 coredump 还是 Android 的 tombstone，我们最终都需要进行俗称为 “验尸” 的过程。有时候，我们会遇到一些堪称完美的 “犯罪现场”。">
+
+<script>
+function navbarTogglerOnClick() {
+  var x = document.getElementById("navbarNavAltMarkup");
+  if (x.style.display == "block") {
+    x.style.display = "none";
+  } else {
+    x.style.display = "block";
+  }
+}
+</script>
+
+<link rel="stylesheet" href="/css/main.css?1570538738">
+<link rel="stylesheet" href="/css/syntax.css?1570538738">
+
+<link rel="alternate" href="https://caikelun.io/index.xml" type="application/rss+xml" title="caikelun.io">
+
+  </head>
+  <body>
+	<div class="container">
+      <nav class="navbar">
+  <a class="navbar-brand" href="/">caikelun.io</a>
+  <button class="navbar-toggler" type="button" onclick="navbarTogglerOnClick()">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class="navbar-collapse" id="navbarNavAltMarkup">
+    <div class="navbar-nav">
+      <a class="navbar-link" href="/">Home</a>
+      <a class="navbar-link" href="/post/">Posts</a>
+      <a class="navbar-link" href="/categories/">Categories</a>
+      <a class="navbar-link" href="/tags/">Tags</a>
+      <a class="navbar-link" href="/index.xml">RSS</a>
+	  <a class="navbar-link" href="/about/">About</a>
+    </div>
+  </div>
+</nav>
+
+	<div class="container-main">
+      
+
+<article class="article">
+  <header class="title">Android APP native 崩溃分析之时间的秘密</header>
+  <div class="meta">
+  2019-08-01&nbsp;
+  
+  
+  /&nbsp;
+  
+  
+  
+  <a href="/categories/android/">@android</a>&nbsp;
+  
+  
+  
+  /&nbsp;
+  
+  
+  
+  <a href="/tags/android/">#android</a>&nbsp;
+  
+  <a href="/tags/native/">#native</a>&nbsp;
+  
+  <a href="/tags/crash/">#crash</a>&nbsp;
+  
+</div>
+
+  <div class="info">
+  Written by: CAI Kelun (蔡克伦)<br />
+  Connect with me: <a href="mailto:caikelun@gmail.com">caikelun@gmail.com</a><br />
+  Original from: <a href="https://caikelun.io/post/2019-08-01-android-app-native-crash-secret-of-time/">https://caikelun.io/</a><br />
+  Licensed under: <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0 License</a>
+</div>
+
+  <div>
+	<nav id="TableOfContents">
+<ul>
+<li><a href="#现象">现象</a>
+<ul>
+<li><a href="#现象-1">现象 1</a></li>
+<li><a href="#现象-2">现象 2</a></li>
+</ul></li>
+<li><a href="#分析">分析</a>
+<ul>
+<li><a href="#问题特征">问题特征</a></li>
+<li><a href="#崩溃捕获的机制">崩溃捕获的机制</a></li>
+<li><a href="#可疑之处">可疑之处</a></li>
+<li><a href="#寻找间接的证据">寻找间接的证据</a>
+<ul>
+<li><a href="#so-文件的最后修改时间">so 文件的最后修改时间</a></li>
+<li><a href="#so-文件的大小和-md5-hash">so 文件的大小和 MD5 hash</a></li>
+<li><a href="#open-files">open files</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#结论">结论</a></li>
+</ul>
+</nav>
+  </div>
+  <div class="content">
+    <p>对于程序的崩溃问题，无论是面对 Linux 的 coredump 还是 Android 的 tombstone，我们最终都需要进行俗称为 “验尸” 的过程。有时候，我们会遇到一些堪称完美的 “犯罪现场”。</p>
+
+<h1 id="现象">现象</h1>
+
+<h2 id="现象-1">现象 1</h2>
+
+<pre><code>Signal: 7 (SIGBUS), Code: 2 (BUS_ADRERR), fault addr 0xcd596372
+
+r0  0000006e  r1  00000000  r2  00000000  r3  00000000
+r4  f35bb740  r5  f35bb748  r6  cd3ff8a8  r7  00000064
+r8  f7451e34  r9  f35bb708  r10 cd301000  r11 cd5a3ac5
+ip  00000000  sp  cd3ff890  lr  00000000  pc  cd596372
+
+#00 pc 0009a372  /data/data/com.package.name/files/download/libCube.so
+#01 pc 000a4f69  /data/data/com.package.name/files/download/libCube.so
+#02 pc 000a513f  /data/data/com.package.name/files/download/libCube.so
+#03 pc 000a7ab9  /data/data/com.package.name/files/download/libCube.so
+#04 pc 000a7abf  /data/data/com.package.name/files/download/libCube.so
+#05 pc 000a7add  /data/data/com.package.name/files/download/libCube.so
+#06 pc 0004078b  /system/lib/libc.so (_ZL15__pthread_startPv+30)
+#07 pc 0001a031  /system/lib/libc.so (__start_thread+6)
+
+#00  cd3ff890  cd3ff8dc
+     cd3ff894  5d419f43
+     cd3ff898  cd3ff8a0
+     cd3ff89c  f35bb744  [anon:libc_malloc]
+     cd3ff8a0  5d419f43
+     cd3ff8a4  000a5952
+     cd3ff8a8  5d419f43
+     cd3ff8ac  2e62c950  /dev/ashmem/dalvik-main space (deleted)
+     cd3ff8b0  00000064
+     cd3ff8b4  f35bb700  [anon:libc_malloc]
+     cd3ff8b8  f35bb750  [anon:libc_malloc]
+     cd3ff8bc  00000064
+     cd3ff8c0  cd3ff8dc
+     cd3ff8c4  cd5a0f6d  /data/data/com.package.name/files/download/libCube.so
+#01  cd3ff8c8  cd5a3ac5  /data/data/com.package.name/files/download/libCube.so
+     cd3ff8cc  00000000
+     cd3ff8d0  00000001
+     cd3ff8d4  262237a1  /dev/ashmem/dalvik-main space (deleted)
+     cd3ff8d8  00000000
+......
+
+......
+memory near pc:
+    cd596350 43591889 60714b11 dd054299 33019b01  ..YC.Kq`.B.....3
+    cd596360 4b0f9306 607118c9 1c299803 f0251c32  ...K..q`..).2.%.
+    cd596370 286ef8d5 7b23d003 d0f52b00 2601e002  ..n(..#{.+.....&amp;
+    cd596380 e0004276 78232600 d1002b00 1c287323  vB...&amp;#x.+..#s(.
+    cd596390 fd84f024 b0091c30 46c0bdf0 3b9ac9ff  $...0......F...;
+    cd5963a0 c4653600 1c0cb510 f8c0f025 d1022800  .6e.....%....(..
+    cd5963b0 20016020 f024e004 6800fcd1 20006020   `. ..$....h `. 
+    cd5963c0 b570bd10 26006803 3b0cb09a 1c0c681b  ..p..h.&amp;...;.h..
+    cd5963d0 d10342b3 600a2202 e0161c18 6800600e  .B...&quot;.`.....`.h
+    cd5963e0 f0244669 2800fef3 f024d005 6800fcb7  iF$....(..$....h
+    cd5963f0 1c306020 9b04e009 021222f0 2380401a   `0......&quot;...@.#
+    cd596400 429a021b 6020d101 b01a2001 b538bd70  ...B.. `. ..p.8.
+    cd596410 1c0d6800 3b0c1c03 2c00681c 2302d102  .h.....;.h.,...#
+    cd596420 e00d600b feeaf024 d0051e04 602b2300  .`..$........#+`
+    cd596430 fef4f024 e0042001 fc90f024 60286800  $.... ..$....h(`
+    cd596440 bd381c20 6803b570 1c0d1c06 681c3b0c   .8.p..h.....;.h
+......
+
+......
+cd4fc000-cd5e9000 r-x       0  ed000 /data/data/com.package.name/files/download/libCube.so
+cd5e9000-cd5ee000 r--   ec000   5000 /data/data/com.package.name/files/download/libCube.so
+cd5ee000-cd5ef000 rw-   f1000   1000 /data/data/com.package.name/files/download/libCube.so
+......
+
+</code></pre>
+
+<pre><code>.text:0009A368      LDR     R0, [SP,#0x38+var_2C]
+.text:0009A36A      MOVS    R1, R5
+.text:0009A36C      MOVS    R2, R6
+.text:0009A36E      BL      j_pthread_cond_timedwait
+.text:0009A372      CMP     R0, #0x6E ;在这个位置发生了 SIGBUS
+.text:0009A374      BEQ     loc_9A37E
+</code></pre>
+
+<p>崩溃位置在 libCube.so 的 offset <code>0009a372</code> 处，根据 arm32 fastcall 调用约定，这里在 <code>pthread_cond_timedwait()</code> 函数返回后，检查 <code>r0</code> 中的返回值是否为 <code>6e</code> （十进制：<code>110</code>），查 <code>pthread_cond_timedwait()</code> manpage 和 Linux errno list 得知：<code>pthread_cond_timedwait()</code> 返回 110（ETIMEDOUT） 表示超时。</p>
+
+<p>这是一个正常的调用，没有问题。那为什么会 SIGBUS 呢？难道是偶发的 NAND Flash 硬件故障？或者是驱动的 bug ？</p>
+
+<p>从 <a href="https://github.com/iqiyi/xCrash">xCrash</a> 捕获的崩溃信息中可以看到， 当前 pc 位置（<code>0009a372</code>）的二进制指令码是 <code>286e</code>，刚好对应 <code>CMP R0, #0x6E</code>，这里的指令码数据是通过 <code>ptrace()</code> 获取的，xCrash 能获取到但是 CPU 执行这条指令时却获取不到？</p>
+
+<h2 id="现象-2">现象 2</h2>
+
+<pre><code>Signal: 11 (SIGSEGV), Code: 1 (SEGV_MAPERR), fault addr 0x11d868
+
+r0  bf206648  r1  00000000  r2  00000000  r3  00000000
+r4  bf206640  r5  bf206648  r6  ffffffff  r7  000001b9
+r8  d44bf980  r9  bf206608  r10 b1654000  r11 b21bd89d
+ip  b240ed4c  sp  b1752890  lr  b21a66b9  pc  0011d868
+
+#00 pc 0011d868  &lt;unknown&gt;
+#01 pc 005586b5  /data/data/com.package.name/files/download/libHCDNClientNet.so (_ZN3psl5Event4WaitEi+160)
+#02 pc 0056fe55  /data/data/com.package.name/files/download/libHCDNClientNet.so (_ZN8BaseHcdn6Thread9ThreadRunEv+122)
+#03 pc 0057002b  /data/data/com.package.name/files/download/libHCDNClientNet.so (_ZN8BaseHcdn10CThreadObj14ThreadWorkFuncEv+6)
+#04 pc 0056f891  /data/data/com.package.name/files/download/libHCDNClientNet.so (_ZN3psl13CThreadObject14ThreadBaseFuncEv+26)
+#05 pc 0056f897  /data/data/com.package.name/files/download/libHCDNClientNet.so (_ZN3psl13CThreadObject3RunEv+2)
+#06 pc 0056f8b5  /data/data/com.package.name/files/download/libHCDNClientNet.so (_ZN3psl10ThreadBaseINS_13CThreadObjectEE10ThreadProcEPv+24)
+#07 pc 00040aab  /system/lib/libc.so (_ZL15__pthread_startPv+30)
+#08 pc 0001a011  /system/lib/libc.so (__start_thread+6)
+
+#00  b1752890  b17528dc
+     ........  ........
+#01  b1752890  b17528dc
+     b1752894  5d419f83
+     b1752898  b17528a0
+     b175289c  bf206644  [anon:libc_malloc]
+     b17528a0  5d419f83
+     b17528a4  000cf94e
+     b17528a8  5d419f84
+     b17528ac  115c2ef0
+     b17528b0  000001b9
+     b17528b4  bf206600  [anon:libc_malloc]
+     b17528b8  bf206650  [anon:libc_malloc]
+     b17528bc  000001b9
+     b17528c0  b17528dc
+     b17528c4  b21bde59  /data/data/com.package.name/files/download/libHCDNClientNet.so (_ZN8BaseHcdn6Thread9ThreadRunEv+126)
+#02  b17528c8  b21bd89d  /data/data/com.package.name/files/download/libHCDNClientNet.so (_ZN3psl10ThreadBaseINS_13CThreadObjectEE10ThreadProcEPv)
+     b17528cc  00000000
+     b17528d0  00000001
+     b17528d4  0730c6a9
+     b17528d8  00000000
+     b17528dc  bf20663c  [anon:libc_malloc]
+     b17528e0  00000000
+     b17528e4  bf206600  [anon:libc_malloc]
+     b17528e8  b1752970
+     b17528ec  b1752930
+......
+
+......
+f73d0000-f7444000 r-x        0   74000 /system/lib/libc.so
+f7444000-f7448000 r--    73000    4000 /system/lib/libc.so
+f7448000-f744b000 rw-    77000    3000 /system/lib/libc.so
+......
+b1c4e000-b23ef000 r-x        0  7a1000 /data/data/com.package.name/files/download/libHCDNClientNet.so
+b23ef000-b23f0000 ---        0    1000
+b23f0000-b240f000 r--   7a1000   1f000 /data/data/com.package.name/files/download/libHCDNClientNet.so
+b240f000-b241a000 rw-   7c0000    b000 /data/data/com.package.name/files/download/libHCDNClientNet.so
+......
+</code></pre>
+
+<p>这是一个段错误，pc 的值是 <code>0011d868</code>，这个地址显然是异常的，我们俗称 pc “跑飞了”。backtrace 第二行中，libHCDNClientNet.so 的 offset <code>005586b5</code> 对应的指令如下：</p>
+
+<pre><code>.text:005586B2      MOVS    R0, R5
+.text:005586B4      BL      j_pthread_mutex_unlock ;这里
+.text:005586B8      MOVS    R0, R6
+</code></pre>
+
+<p>这是对 libc.so 中 <code>pthread_mutex_unlock()</code> 函数的调用，这里不应该有问题。难道是 linker 的 bug？<code>pthread_mutex_unlock()</code> 的绝对地址应该由 linker 写入 libHCDNClientNet.so 的 GOT 中。</p>
+
+<p>此类怪异的崩溃现象还有一些，这里不继续罗列了。</p>
+
+<p>问题到底出在哪里？</p>
+
+<h1 id="分析">分析</h1>
+
+<h2 id="问题特征">问题特征</h2>
+
+<p>经过总结，发现上述的问题有以下几个特征：</p>
+
+<ul>
+<li>从 tombstone 看不出问题的根本原因。</li>
+<li>崩溃点本身都不在业务逻辑可控的范围内。</li>
+<li>大多数发生在会导致线程 block 的调用的后一条指令处。</li>
+<li>都发生在动态下载的 so 库中。（注意 so 库都在 <code>files</code> 目录中）</li>
+<li>设备机型和操作系统版本分布无明显特征。</li>
+<li>99% 以上发生在非 root 的设备上。（现在 root 手机的用户越来越少了）</li>
+</ul>
+
+<h2 id="崩溃捕获的机制">崩溃捕获的机制</h2>
+
+<p>无论是安卓系统的 debuggerd，还是 <a href="https://github.com/iqiyi/xCrash">xCrash</a>，或者 <a href="https://chromium.googlesource.com/breakpad/breakpad/">Breakpad</a>，在捕获 native 崩溃时，都会经历以下几个阶段：</p>
+
+<ul>
+<li>崩溃进程的 signal handler 被唤起执行。</li>
+<li><code>clone()</code> 子进程。</li>
+<li>在子进程中 <code>ptrace()</code> attach 到崩溃进程的各个线程。</li>
+<li>读取崩溃进程中各个线程的寄存器、内存、ELF 等信息。</li>
+<li>将信息直接写入 dump 文件；或者进一步分析提取 backtrace 等信息写入 dump 文件。</li>
+</ul>
+
+<p>在子进程 attach 到所有崩溃进程的线程之前，崩溃进程仍然还在执行。如果考虑安卓 app 的多进程情况，那么在整个崩溃捕获期间，app 的其他进程也都可能在执行中。</p>
+
+<p>崩溃捕获的机制也是由代码实现的，它们需要被一步一步的执行。我们可以想象：当案件（崩溃）发生时，警察（崩溃捕获机制）赶到案发现场是需要一定的时间的，这段时间就是 “视觉的盲区”。</p>
+
+<p>对于我们前面描述的崩溃问题，在进程崩溃之后，但在 xCrash 开始执行并记录崩溃信息之前，一定还发生了一些我们所不知道的事情，案发现场的某些细节被篡改了！</p>
+
+<h2 id="可疑之处">可疑之处</h2>
+
+<p>回想上述的 “现象1”，指令码 <code>286e</code> 为什么 xCrash 能获取到，但是 CPU 执行时却获取不到而发生了 SIGBUS？</p>
+
+<p>也许原因很简单：CPU 的执行流水线从内存加载这条指令时，so 库文件的这个 offset 位置确实不可读，于是发生了 SIGBUS；之后 xCrash 开始捕获崩溃信息，当 xCrash 用 <code>ptrace()</code> 从同一个内存位置读取数据时，so 库文件的这个 offset 位置又重新变的可读了。</p>
+
+<p>最大的可能性是：so 库文件在已经被 linker 加载并开始执行的情况下，又再次被覆写了。也许是 so 库在动态下载、解压、校验的某些环节存在 bug，导致内部状态发生了异常。</p>
+
+<h2 id="寻找间接的证据">寻找间接的证据</h2>
+
+<p>经过仔细的分析，我们确实发现了一些间接的证据：</p>
+
+<h3 id="so-文件的最后修改时间">so 文件的最后修改时间</h3>
+
+<p>我们发了大量的 “崩溃 so 库文件的最后修改时间” 晚于 “崩溃时间点” 的情况。类似下面的情况：</p>
+
+<pre><code>process start time  : 2019-08-01 01:54:51.519 +0800
+process crash time  : 2019-08-01 01:54:53.743 +0800
+so last modify time : 2019-08-01 01:54:53.938 +0800
+</code></pre>
+
+<h3 id="so-文件的大小和-md5-hash">so 文件的大小和 MD5 hash</h3>
+
+<p>由于动态下载的 so 库我们是可以从服务端可靠的获取的，我们比对了 xCrash 记录的崩溃 so 库的文件大小和 MD5 hash。发现有一部分确实是不对的，这部分情况应该就属于：“直到 xCrash 开始记录崩溃信息的时候，so 库被错误覆盖的过程还没有完全结束”。</p>
+
+<h3 id="open-files">open files</h3>
+
+<p>通过分析 open files 列表，我们看到在有些情况下，崩溃进程仍然持有有效的 FD 可用于访问动态下载的 so 库所属的 zip 包：</p>
+
+<pre><code>Open files:
+......
+fd 57: /data/data/com.package.name/files/download/fullso.zip
+......
+</code></pre>
+
+<p>有些 FD 还指向 zip 包的 crc 文件：</p>
+
+<pre><code>Open files:
+......
+fd 58: /data/data/com.package.name/files/download/fullso.zip.crc
+......
+</code></pre>
+
+<h1 id="结论">结论</h1>
+
+<p>结论已经比较明显了：so 库在动态下载、解压、校验的某些环节存在 bug，导致 so 库文件在已经被 linker 加载并开始执行的情况下，又再次被覆写了。</p>
+
+<p>后续：我们的 so 库动态下发流程做了改进，增加了更多防御性的设计。我们从 APM 线上崩溃数据的统计中看到，类似前述 “现象1” 和 “现象2” 的崩溃几乎都没有了，APP 的整体 native 崩溃率也进一步的降低了。</p>
+  </div>
+</article>
+
+
+	</div>
+      <footer class="site-footer">
+  
+  <div class="copyright">
+	© 2018-present
+	
+	CAI Kelun (蔡克伦)
+	<br />
+	Powered by <a href="https://gohugo.io/">Hugo</a> &
+	Hosted on <a href="https://gitlab.com/">GitLab Pages</a>
+  </div>
+</footer>
+
+	</div>
+  </body>
+</html>

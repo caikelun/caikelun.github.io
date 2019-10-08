@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>android on caikelun.io</title>
+    <link>https://caikelun.io/tags/android/</link>
+    <description>Recent content in android on caikelun.io</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <managingEditor>caikelun@gmail.com (CAI Kelun (蔡克伦))</managingEditor>
+    <webMaster>caikelun@gmail.com (CAI Kelun (蔡克伦))</webMaster>
+    <lastBuildDate>Thu, 01 Aug 2019 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="https://caikelun.io/tags/android/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Android APP native 崩溃分析之时间的秘密</title>
+      <link>https://caikelun.io/post/2019-08-01-android-app-native-crash-secret-of-time/</link>
+      <pubDate>Thu, 01 Aug 2019 00:00:00 +0000</pubDate>
+      <author>caikelun@gmail.com (CAI Kelun (蔡克伦))</author>
+      <guid>https://caikelun.io/post/2019-08-01-android-app-native-crash-secret-of-time/</guid>
+      <description>&lt;p&gt;对于程序的崩溃问题，无论是面对 Linux 的 coredump 还是 Android 的 tombstone，我们最终都需要进行俗称为 “验尸” 的过程。有时候，我们会遇到一些堪称完美的 “犯罪现场”。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Android APP native 崩溃分析之令人困惑的 backtrace</title>
+      <link>https://caikelun.io/post/2019-06-01-android-app-native-crash-confusing-backtrace/</link>
+      <pubDate>Sat, 01 Jun 2019 00:00:00 +0000</pubDate>
+      <author>caikelun@gmail.com (CAI Kelun (蔡克伦))</author>
+      <guid>https://caikelun.io/post/2019-06-01-android-app-native-crash-confusing-backtrace/</guid>
+      <description>&lt;p&gt;完美无缺的代码逻辑，一定能产生完美无缺的程序吗？答案是否定的。从软件的层面来看，也许只有二进制才永远不会欺骗你。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Android APP native 崩溃分析之 linker SIGBUS 崩溃</title>
+      <link>https://caikelun.io/post/2019-05-31-android-app-native-crash-linker-sigbus/</link>
+      <pubDate>Fri, 31 May 2019 00:00:00 +0000</pubDate>
+      <author>caikelun@gmail.com (CAI Kelun (蔡克伦))</author>
+      <guid>https://caikelun.io/post/2019-05-31-android-app-native-crash-linker-sigbus/</guid>
+      <description>&lt;p&gt;这是 Android APP native 崩溃分析系列文章的第一篇。最近分析了一例线上的 Android linker SIGBUS 崩溃，在这里记录一下。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>IDA Pro 静态分析与动态分析</title>
+      <link>https://caikelun.io/post/2018-06-26-ida-pro-static-analysis-and-dynamic-analysis/</link>
+      <pubDate>Tue, 26 Jun 2018 00:00:00 +0000</pubDate>
+      <author>caikelun@gmail.com (CAI Kelun (蔡克伦))</author>
+      <guid>https://caikelun.io/post/2018-06-26-ida-pro-static-analysis-and-dynamic-analysis/</guid>
+      <description>&lt;p&gt;IDA Pro 是一款交互式的反汇编器和调试器，用于对可执行二进制文件做静态分析和动态分析。本文描述了静态分析和动态分析的基本用法（以 Android native so 库为例）；还总结了一些常见的“反静态分析”和“反动态分析”的方法，以及基本的应对思路。（这篇文章的内容来自于近期在公司内部做的一个技术分享，以介绍概况为主，内容并不是很深入。）&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Android PLT hook 概述</title>
+      <link>https://caikelun.io/post/2018-05-01-android-plt-hook-overview/</link>
+      <pubDate>Tue, 01 May 2018 00:00:00 +0000</pubDate>
+      <author>caikelun@gmail.com (CAI Kelun (蔡克伦))</author>
+      <guid>https://caikelun.io/post/2018-05-01-android-plt-hook-overview/</guid>
+      <description>&lt;p&gt;Android native 动态库的加载和运行机制和 Linux 是类似的。我们有时候需要在运行时动态 hook（替换、拦截、窃听）某个动态库的外部调用，也许用于监测内存泄漏、监听 socket 通讯、监听 Flash IO、修复特定机型的系统库 bug、等等。这种 hook 动态库外部调用的机制，Linux 和 Android 都没有提供直接的 API，但是我们可以自己编码来实现它。&lt;/p&gt;</description>
+    </item>
+    
+  </channel>
+</rss>
