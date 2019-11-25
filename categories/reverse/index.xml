@@ -5,8 +5,8 @@
     <link>https://caikelun.io/categories/reverse/</link>
     <description>Recent content in reverse on caikelun.io</description>
     <generator>Hugo -- gohugo.io</generator>
-    <managingEditor>caikelun@gmail.com (CAI Kelun (蔡克伦))</managingEditor>
-    <webMaster>caikelun@gmail.com (CAI Kelun (蔡克伦))</webMaster>
+    <managingEditor>caikelun@gmail.com (CAI Kelun)</managingEditor>
+    <webMaster>caikelun@gmail.com (CAI Kelun)</webMaster>
     <lastBuildDate>Tue, 26 Jun 2018 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="https://caikelun.io/categories/reverse/index.xml" rel="self" type="application/rss+xml" />
@@ -16,7 +16,7 @@
       <title>IDA Pro 静态分析与动态分析</title>
       <link>https://caikelun.io/post/2018-06-26-ida-pro-static-analysis-and-dynamic-analysis/</link>
       <pubDate>Tue, 26 Jun 2018 00:00:00 +0000</pubDate>
-      <author>caikelun@gmail.com (CAI Kelun (蔡克伦))</author>
+      <author>caikelun@gmail.com (CAI Kelun)</author>
       <guid>https://caikelun.io/post/2018-06-26-ida-pro-static-analysis-and-dynamic-analysis/</guid>
       <description>&lt;p&gt;IDA Pro 是一款交互式的反汇编器和调试器，用于对可执行二进制文件做静态分析和动态分析。本文描述了静态分析和动态分析的基本用法（以 Android native so 库为例）；还总结了一些常见的“反静态分析”和“反动态分析”的方法，以及基本的应对思路。（这篇文章的内容来自于近期在公司内部做的一个技术分享，以介绍概况为主，内容并不是很深入。）&lt;/p&gt;</description>
     </item>

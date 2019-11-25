@@ -5,8 +5,8 @@
     <link>https://caikelun.io/tags/ndk/</link>
     <description>Recent content in ndk on caikelun.io</description>
     <generator>Hugo -- gohugo.io</generator>
-    <managingEditor>caikelun@gmail.com (CAI Kelun (蔡克伦))</managingEditor>
-    <webMaster>caikelun@gmail.com (CAI Kelun (蔡克伦))</webMaster>
+    <managingEditor>caikelun@gmail.com (CAI Kelun)</managingEditor>
+    <webMaster>caikelun@gmail.com (CAI Kelun)</webMaster>
     <lastBuildDate>Sat, 01 Jun 2019 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="https://caikelun.io/tags/ndk/index.xml" rel="self" type="application/rss+xml" />
@@ -16,7 +16,7 @@
       <title>Android APP native 崩溃分析之令人困惑的 backtrace</title>
       <link>https://caikelun.io/post/2019-06-01-android-app-native-crash-confusing-backtrace/</link>
       <pubDate>Sat, 01 Jun 2019 00:00:00 +0000</pubDate>
-      <author>caikelun@gmail.com (CAI Kelun (蔡克伦))</author>
+      <author>caikelun@gmail.com (CAI Kelun)</author>
       <guid>https://caikelun.io/post/2019-06-01-android-app-native-crash-confusing-backtrace/</guid>
       <description>&lt;p&gt;完美无缺的代码逻辑，一定能产生完美无缺的程序吗？答案是否定的。从软件的层面来看，也许只有二进制才永远不会欺骗你。&lt;/p&gt;</description>
     </item>
