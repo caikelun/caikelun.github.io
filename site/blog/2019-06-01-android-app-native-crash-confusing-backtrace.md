@@ -1,6 +1,9 @@
-# **Android APP native 崩溃分析之令人困惑的 backtrace**
+# Android APP native 崩溃分析之令人困惑的 backtrace
 
-date: 2019-06-01
+* Author: Kelun Cai (caikelun@gmail.com)
+* Date: 2019-06-01
+* Tags: Android, crash
+* License: [Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/)
 
 
 # 现象

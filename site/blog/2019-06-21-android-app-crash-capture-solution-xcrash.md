@@ -1,6 +1,12 @@
-# **安卓APP崩溃捕获方案 —— xCrash**
+# 安卓 APP 崩溃捕获方案 xCrash
 
-date: 2019-06-21
+* Author: Kelun Cai (caikelun@gmail.com)
+* Date: 2019-06-21
+* Tags: Android, crash
+* License: [Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/)
+
+
+# 概述
 
 [原文](https://mp.weixin.qq.com/s/bJKvrfO6B8NTGWySpeCYgA)
 

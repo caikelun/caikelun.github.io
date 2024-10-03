@@ -1,6 +1,12 @@
-# **字节跳动开源 Android PLT hook 方案 ByteHook**
+# 字节跳动开源 Android PLT hook 方案 ByteHook
 
-date: 2021-08-19
+* Author: Kelun Cai (caikelun@gmail.com)
+* Date: 2021-08-19
+* Tags: Android, hook, PLT, GOT
+* License: [Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/)
+
+
+# 概述
 
 [原文](https://mp.weixin.qq.com/s/9-fmlN8_bQYjN5sRzL4fTg)
 

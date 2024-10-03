@@ -1,6 +1,9 @@
-# **IDA Pro 静态分析与动态分析**
+# IDA Pro 静态分析与动态分析
 
-date: 2018-06-26
+* Author: Kelun Cai (caikelun@gmail.com)
+* Date: 2018-06-26
+* Tags: Android, RE, IDA
+* License: [Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/)
 
 
 # 概述

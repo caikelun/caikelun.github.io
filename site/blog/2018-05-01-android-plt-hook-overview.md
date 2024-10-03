@@ -1,12 +1,15 @@
-# **Android PLT hook 概述**
+# Android PLT hook 概述
 
-date: 2018-05-01
+* Author: Kelun Cai (caikelun@gmail.com)
+* Date: 2018-05-01
+* Tags: Android, hook, PLT, GOT
+* License: [Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/)
 
 
 # 获取代码和资源
 
 
-文中使用的示例代码可以从 [这里](https://gitlab.com/caikelun/xHook/tree/master/docs/overview/code) 获取。文中提到的 xhook 开源项目可以从 [这里](https://gitlab.com/caikelun/xHook) 获取。
+文中使用的示例代码可以从 [这里](https://github.com/iqiyi/xHook/tree/master/docs/overview/code) 获取。文中提到的 xhook 开源项目可以从 [这里](https://github.com/iqiyi/xHook) 获取。
 
 
 # 开始
@@ -629,7 +632,7 @@ caikelun@debian:~$
 
 是的，成功了！我们并没有修改 libtest.so 的代码，甚至没有重新编译它。我们仅仅修改了 main 程序。
 
-libtest.so 和 main 的源码放在 gitlab 上，可以从 [这里](https://gitlab.com/caikelun/xHook/tree/master/docs/overview/code) 获取到。（根据你使用的编译器不同，或者编译器的版本不同，生成的 libtest.so 中，也许 `malloc` 对应的地址不再是 `0x3f90`，这时你需要先用 readelf 确认，然后再到 `main.c` 中修改。）
+libtest.so 和 main 的源码放在 gitlab 上，可以从 [这里](https://github.com/iqiyi/xHook/tree/master/docs/overview/code) 获取到。（根据你使用的编译器不同，或者编译器的版本不同，生成的 libtest.so 中，也许 `malloc` 对应的地址不再是 `0x3f90`，这时你需要先用 readelf 确认，然后再到 `main.c` 中修改。）
 
 
 ## 使用 xhook
@@ -658,7 +661,7 @@ int main()
 }
 ```
 
-xhook 支持 armeabi, armeabi-v7a 和 arm64-v8a。支持 Android 4.0 (含) 以上版本 (API level >= 14)。经过了产品级的稳定性和兼容性验证。可以在 [这里](https://gitlab.com/caikelun/xHook) 获取 `xhook`。
+xhook 支持 armeabi, armeabi-v7a 和 arm64-v8a。支持 Android 4.0 (含) 以上版本 (API level >= 14)。经过了产品级的稳定性和兼容性验证。可以在 [这里](https://github.com/iqiyi/xHook) 获取 `xhook`。
 
 总结一下 xhook 中执行 PLT hook 的流程：
 
